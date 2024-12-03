@@ -1,0 +1,10 @@
+\ Model VRPmodel_copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+ 
+Subject To
+ R29: 8 C145 = 1
+Bounds
+Binaries
+ C145
+End

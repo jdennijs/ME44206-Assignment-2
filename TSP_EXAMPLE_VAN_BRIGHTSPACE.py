@@ -93,10 +93,10 @@ for i in V:
     
  
 m.update()
-m.write('TSPmodel.lp')
+#m.write('TSPmodel.lp')
 m.Params.timeLimit = 3600
 m.optimize()
-m.write('TSPmodel.sol')
+#m.write('TSPmodel.sol')
 
 # Plot the routes that are decided to be traversed 
 arc_solution = m.getAttr('x', x)
@@ -127,5 +127,7 @@ print('Obj: %g' % m.objVal)
 Totaldistance = sum(t[i,j]*x[i,j].X for i in V for j in V)
 
 print('Total distance traveled: ', Totaldistance)
+
+
 
 
