@@ -47,6 +47,12 @@ C = 130 #capacity of each vehicle
 
 d = VRP[:,3] #Demand at a stop
 
+ST = VRP[:4] #Service time 
+
+RT = VRP[:5] #Ready time
+
+DT = VRP[:6] #Due time
+
 
 m = Model('VRPmodel')
 
@@ -124,6 +130,9 @@ for i in N:
 #Vehicle capacity constraint
 for v in V:
     m.addConstr(quicksum(d[j] * z[j, v] for j in N) <= C)
+    
+#Constraint 8
+#Stop j is visited after stop i including driving time and service time
 
 
 m.update()
