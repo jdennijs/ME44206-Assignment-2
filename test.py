@@ -43,6 +43,11 @@ for i in nodes:
 
 V = range(2)
 
+C = 130 #capacity of each vehicle
+
+d = VRP[:,3] #Demand at a stop
+
+
 m = Model('VRPmodel')
 
 ## Decision variables
@@ -78,36 +83,47 @@ m.setObjective(obj, GRB.MINIMIZE)
 
 ##Constraints
 
-
-#Every location visited exactly once        
+#Constraint 1
+#Every location visited exactly once  
+      
 for j in N:
     if j != 0:
         m.addConstr(quicksum(z[j,v] for v in V) == 1)
     
+#Constraint 2
 #Flow continuity
 for j in N:
     for v in V:
         m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
 
+#Constraint 3
 #start at depot
 for v in V:
     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
+    
+#Constraint  4
+#end at depot
+for v in V:
     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
+#Constraint 5
 for v in V:
     for j in N:
         if j != 0:
             m.addConstr(quicksum(b[i, j, v] for i in N if i != j) == z[j, v])
     
+#Constraint 6
 # Add subtour elimination constraints
 for i in N:
     for j in N:
         if i != j and j != 0:  # Exclude depot as it does not need ordering
             for v in V:
-                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j],
-                            name=f"SubtourElim[{i},{j},{v}]")
+                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
-
+#Constraint 7
+#Vehicle capacity constraint
+for v in V:
+    m.addConstr(quicksum(d[j] * z[j, v] for j in N) <= C)
 
 
 m.update()
@@ -120,14 +136,19 @@ print(m.objVal)
 print("Nodes:", N)
 print("Decision Variables (z):", z)
 
+   
+    
 if m.status == GRB.OPTIMAL:
     print(f"Optimal objective value (total distance): {m.objVal}")
     
-    # Extract routes for each vehicle
+    # Extract routes and loads for each vehicle
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
+    vehicle_loads = {v: 0 for v in V}  # Dictionary to store the load for each vehicle
+
     for v in V:
         current_node = 0  # Start at the depot
         route = [current_node]  # Initialize route with the depot
+        load = 0  # Initialize vehicle load
         
         while True:
             # Find the next node connected to the current node for this vehicle
@@ -142,15 +163,20 @@ if m.status == GRB.OPTIMAL:
                 break
             
             route.append(next_node)
+            load += d[next_node]  # Add the demand of the visited node to the load
             current_node = next_node
         
         routes[v] = route  # Save the route for this vehicle
-    
-    # Print routes
+        vehicle_loads[v] = load  # Save the load for this vehicle
+
+    # Print routes and loads
     for v, route in routes.items():
         print(f"Vehicle {v}: {' -> '.join(map(str, route))}")
+        print(f"Vehicle {v} carries a total load of: {vehicle_loads[v]}")
+
 else:
     print("No optimal solution found.")
+
     
 arc_solution = m.getAttr('x', b)
 
