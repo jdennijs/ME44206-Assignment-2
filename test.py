@@ -104,8 +104,7 @@ for i in N:
     for j in N:
         if i != j and j != 0:  # Exclude depot as it does not need ordering
             for v in V:
-                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j],
-                            name=f"SubtourElim[{i},{j},{v}]")
+                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
 
 
