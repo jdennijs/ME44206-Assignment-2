@@ -2,7 +2,7 @@
 """
 Created on Sat Nov 30 17:23:05 2024
 
-@author: vande
+@author: Ivo Aben, Jelle Derks, Jochem den Nijs and Wouter van der Hoorn
 """
 
 from gurobipy import *
@@ -184,8 +184,9 @@ if m.status == GRB.OPTIMAL:
                     break
             
             if next_node is None or next_node == 0:  # Return to depot or no more nodes to visit
+                last_node = route[-1]
                 route.append(0)  # Append depot at the end
-                times.append(t[0, v].X)  # Append depot's return time
+                times.append(t[last_node, v].X + s[last_node,0] + ST[last_node])  # Append depot's return time
                 break
             
             route.append(next_node)
