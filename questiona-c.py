@@ -133,7 +133,7 @@ for v in V:
     
 
 #Constraint 8
-M = 1e5
+M = 1e5 + 1e6
 for v in V:
     for i in N:
         for j in N:
@@ -146,7 +146,7 @@ for v in V:
 for v in V:
     for j in N:
         for i in N:
-            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v])
+            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v]) # service time does not have to be within time window
 
 # #Constraint 10:
 # #Vehicle arrives at stop after ready time
