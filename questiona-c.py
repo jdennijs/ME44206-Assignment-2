@@ -2,7 +2,7 @@
 """
 Created on Sat Nov 30 17:23:05 2024
 
-@author: vande
+@author: Ivo Aben, Jelle Derks, Jochem den Nijs and Wouter van der Hoorn
 """
 
 from gurobipy import *
@@ -12,15 +12,14 @@ import copy
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 #Read data file
 with open("Data/data_small.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
     data = f.readlines()                        # Extract instance definitions
 
 VRP = []                                        # Create array for data related to nodes
-i=0                                             # Varible to keep track of lines in data file
+i = 0                                             # Varible to keep track of lines in data file
 for line in data:
-    i=i+1
+    i = i + 1
     words = line.split()
     words=[int(i) for i in words]           # Covert data from string to integer
     VRP.append(words)                       # Store node data
@@ -28,17 +27,17 @@ VRP = np.array(VRP)
 
 print(VRP)
 
-xc=VRP[:,1]                                     # X-position of nodes
-yc=VRP[:,2]                                     # Y-position of nodes
+xc = VRP[:,1]                                     # X-position of nodes
+yc = VRP[:,2]                                     # Y-position of nodes
 
 nodes = VRP[:, 0]
 N = VRP[:, 0]
 n = len(nodes)
 
-s=np.zeros((n,n))                               # Create array for distance between nodes
+s = np.zeros((n,n))                               # Create array for distance between nodes
 for i in nodes:
     for j in nodes:
-        s[i][j]=math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
+        s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
 
 V = range(2)
@@ -134,7 +133,7 @@ for v in V:
     
 
 #Constraint 8
-M = 1e5
+M = 1e5 + 1e6
 for v in V:
     for i in N:
         for j in N:
@@ -147,7 +146,7 @@ for v in V:
 for v in V:
     for j in N:
         for i in N:
-            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v])
+            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v]) # service time does not have to be within time window
 
 # #Constraint 10:
 # #Vehicle arrives at stop after ready time
@@ -162,7 +161,7 @@ m.optimize()
 
 
 if m.status == GRB.OPTIMAL:
-    print(f"Optimal objective value (total distance): {m.objVal}")
+    print(f"Optimal objective value (total distance): {m.objVal:.2f}")
     
     # Extract routes, loads, and arrival times for each vehicle
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
@@ -184,8 +183,9 @@ if m.status == GRB.OPTIMAL:
                     break
             
             if next_node is None or next_node == 0:  # Return to depot or no more nodes to visit
+                last_node = route[-1]
                 route.append(0)  # Append depot at the end
-                times.append(t[0, v].X)  # Append depot's return time
+                times.append(t[last_node, v].X + s[last_node,0] + ST[last_node])  # Append depot's return time
                 break
             
             route.append(next_node)
@@ -205,8 +205,6 @@ if m.status == GRB.OPTIMAL:
 
 else:
     print("No optimal solution found.")
-
-
     
 arc_solution = m.getAttr('x', b)
 
@@ -230,7 +228,7 @@ for v in V:
     for i in N:
         for j in N:
             if arc_solution[i, j, v] > 0.99:  # Check if route is selected
-                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == 0 else "")
+                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
 
 plt.legend()
 plt.show()
