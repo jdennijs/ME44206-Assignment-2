@@ -12,15 +12,14 @@ import copy
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 #Read data file
 with open("Data/data_small.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
     data = f.readlines()                        # Extract instance definitions
 
 VRP = []                                        # Create array for data related to nodes
-i=0                                             # Varible to keep track of lines in data file
+i = 0                                             # Varible to keep track of lines in data file
 for line in data:
-    i=i+1
+    i = i + 1
     words = line.split()
     words=[int(i) for i in words]           # Covert data from string to integer
     VRP.append(words)                       # Store node data
@@ -28,17 +27,17 @@ VRP = np.array(VRP)
 
 print(VRP)
 
-xc=VRP[:,1]                                     # X-position of nodes
-yc=VRP[:,2]                                     # Y-position of nodes
+xc = VRP[:,1]                                     # X-position of nodes
+yc = VRP[:,2]                                     # Y-position of nodes
 
 nodes = VRP[:, 0]
 N = VRP[:, 0]
 n = len(nodes)
 
-s=np.zeros((n,n))                               # Create array for distance between nodes
+s = np.zeros((n,n))                               # Create array for distance between nodes
 for i in nodes:
     for j in nodes:
-        s[i][j]=math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
+        s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
 
 V = range(2)
@@ -162,7 +161,7 @@ m.optimize()
 
 
 if m.status == GRB.OPTIMAL:
-    print(f"Optimal objective value (total distance): {m.objVal}")
+    print(f"Optimal objective value (total distance): {m.objVal:.2f}")
     
     # Extract routes, loads, and arrival times for each vehicle
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
@@ -206,8 +205,6 @@ if m.status == GRB.OPTIMAL:
 
 else:
     print("No optimal solution found.")
-
-
     
 arc_solution = m.getAttr('x', b)
 
@@ -231,7 +228,7 @@ for v in V:
     for i in N:
         for j in N:
             if arc_solution[i, j, v] > 0.99:  # Check if route is selected
-                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == 0 else "")
+                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
 
 plt.legend()
 plt.show()
