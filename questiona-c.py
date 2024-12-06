@@ -146,13 +146,8 @@ for v in V:
 #Vehicle arrives at stop before due time
 for v in V:
     for j in N:
-<<<<<<< Updated upstream
-        if j != 0:
-            m.addConstr(t[j, v] <= DT[j])
-=======
         for i in N:
             m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v])
->>>>>>> Stashed changes
 
 # #Constraint 10:
 # #Vehicle arrives at stop after ready time
