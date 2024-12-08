@@ -209,7 +209,7 @@ else:
 arc_solution = m.getAttr('x', b)
 
 # Plot the routes
-fig = plt.figure(figsize=(10, 10))
+fig = plt.figure(dpi= 120, figsize=(10, 10))
 plt.xlabel('x-coordinate')
 plt.ylabel('y-coordinate')
 plt.title('Vehicle Routing Problem Solution')
@@ -231,6 +231,7 @@ for v in V:
                 plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
 
 plt.legend()
+plt.savefig('Figs/questiona-c.png')
 plt.show()
 
 
