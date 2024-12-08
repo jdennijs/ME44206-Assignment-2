@@ -40,7 +40,7 @@ for i in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
 
-V = range(2)
+V = range(2) #Number of vehicles
 
 C = 130 #capacity of each vehicle
 
@@ -233,7 +233,6 @@ for v in V:
 plt.legend()
 plt.savefig('Figs/questiona-c.png')
 plt.show()
-
 
 
 
