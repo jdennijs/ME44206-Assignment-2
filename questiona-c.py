@@ -76,7 +76,6 @@ for v in V:
     for j in N:
         t[j, v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)
         
-
 # Add position variables for subtour elimination
 u = {}
 for i in N:
@@ -126,12 +125,15 @@ for i in N:
             for v in V:
                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
+#for i in N:    # these seem unnecessary by definition
+#    m.addConstr(u[i] >= 0)
+#    m.addConstr(u[i] <= n)
+
 #Constraint 7
 #Vehicle capacity constraint
 for v in V:
     m.addConstr(quicksum(d[j] * z[j, v] for j in N) <= C)
     
-
 #Constraint 8
 M = 1e5 + 1e6
 for v in V:
@@ -139,7 +141,6 @@ for v in V:
         for j in N:
             if i != j and j != 0:  # Ensure it's not the depot
                 m.addConstr(t[j, v] >= t[i, v] + s[i, j] + ST[i] - M * (1 - b[i, j, v]))
-
 
 #Constraint 9
 #Vehicle arrives at stop before due time
