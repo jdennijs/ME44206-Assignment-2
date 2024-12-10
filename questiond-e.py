@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #Read data file
-with open("Data/data_small.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
+with open("Data/data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
     data = f.readlines()                        # Extract instance definitions
 
 VRP = []                                        # Create array for data related to nodes
@@ -25,7 +25,6 @@ for line in data:
     VRP.append(words)                       # Store node data
 VRP = np.array(VRP)
 
-print(VRP)
 
 xc = VRP[:,1]                                     # X-position of nodes
 yc = VRP[:,2]                                     # Y-position of nodes
@@ -48,9 +47,17 @@ d = VRP[:,3] #Demand at a stop
 
 ST = VRP[:,4] #Service time 
 
-RT = VRP[:,5] #Ready time
+W = VRP[:,5] #Number of time windows per stop
 
-DT = VRP[:,6] #Due time
+
+  
+RT = []
+DT = []
+
+for w, j in enumerate(W):
+    RT.append(VRP[w, 6:6 + 2 * j:2].tolist())
+    DT.append(VRP[w, 7:7 + 2 * j:2].tolist())
+    
 
 
 m = Model('VRPmodel')
@@ -80,6 +87,13 @@ for v in V:
 u = {}
 for i in N:
     u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
+    
+#binary variable, 1 if stop j is visted in time window w, 0 if not
+k = {}
+for j in N:
+    for w in W:
+        print(j, w)
+        k[j, w] = m.addVar(lb=0, vtype=GRB.BINARY)
 
         
 ##Objective
@@ -147,13 +161,31 @@ for v in V:
 for v in V:
     for j in N:
         for i in N:
-            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v]) # service time does not have to be within time window
+            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j][0] * (1 - b[i,0,v]) + DT[0][0] * b[i,0,v]) # service time does not have to be within time window
 
-# #Constraint 10:
-# #Vehicle arrives at stop after ready time
+#Constraint 10:
+#Vehicle arrives at stop after ready time
+# for v in V:
+#     for j in N:
+#         for w in W: 
+#             m.addConstr(t[j, v] >= RT[j][w])
+            
+# for v in V:
+#     for j in N:
+#         # For each time window w, check if k[j, w] is 1 and enforce the ready time condition
+#         for w in W:  # Loop over the time windows for stop j
+#             m.addConstr(t[j, v] >= RT[j][w] * k[j, w])
+            
 for v in V:
     for j in N:
-        m.addConstr(t[j, v] >= RT[j])
+        # Loop over the number of time windows for stop j (from W[j])
+        for w in range(W[j]):  # Use the number of time windows for stop j
+            m.addConstr(t[j, v] >= RT[j][w] * k[j, w])
+        
+# Constraint 11:
+# Stop is only visited within one of the windows
+for w in range(W):
+    m.addConstr(quicksum(k[j, w] for j in N) == 1)
         
 
 m.update()
@@ -163,6 +195,8 @@ m.optimize()
 
 if m.status == GRB.OPTIMAL:
     print(f"Optimal objective value (total distance): {m.objVal:.2f}")
+    
+    
     
     # Extract routes, loads, and arrival times for each vehicle
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
@@ -206,6 +240,8 @@ if m.status == GRB.OPTIMAL:
 
 else:
     print("No optimal solution found.")
+    
+
     
 arc_solution = m.getAttr('x', b)
 
