@@ -25,8 +25,6 @@ for line in data:
     VRP.append(words)                       # Store node data
 VRP = np.array(VRP)
 
-print(VRP)
-
 xc = VRP[:,1]                                     # X-position of nodes
 yc = VRP[:,2]                                     # Y-position of nodes
 
