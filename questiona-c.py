@@ -70,7 +70,7 @@ for j in N:
     for v in V:
         z[j, v] = m.addVar(vtype=GRB.BINARY, lb=0)
         
-# arrival time of vehicle v at location i
+# arrival time of vehicle v at location j
 t = {}
 for v in V:
     for j in N:
@@ -162,12 +162,22 @@ m.optimize()
 
 
 if m.status == GRB.OPTIMAL:
+#    print(t[1, 0].X)
+#    for v in V:
+#        for i in N:
+#            for t in round(t[i].X,0):
+#                print(f'Vehicle {v} is at location {i} at {t[i]}.')
+    
     print(f"Optimal objective value (total distance): {m.objVal:.2f}")
     
     # Extract routes, loads, and arrival times for each vehicle
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
     vehicle_loads = {v: 0 for v in V}  # Dictionary to store the load for each vehicle
     vehicle_times = {v: [] for v in V}  # Dictionary to store arrival times for each vehicle
+
+    for v in V:
+        for i in N:
+            print(vehicle_times)
 
     for v in V:
         current_node = 0  # Start at the depot
