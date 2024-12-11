@@ -111,7 +111,7 @@ for j in N:
 #for v in V:
 #    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
-#Constraint 5 #if a car is at i and it goes to j, the route z[j,v] exists for that vehicle. 
+#Constraint 5 #if a car is at i and it goes to j, the route b[i, j,v] exists for that vehicle. 
 # If this one is not there, no car drives
 #for v in V: # moved to the sum as it also implies singular location visits
 for j in N:
@@ -174,12 +174,15 @@ if m.status == GRB.OPTIMAL:
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
     vehicle_loads = {v: 0 for v in V}  # Dictionary to store the load for each vehicle
     vehicle_times = {v: [] for v in V}  # Dictionary to store arrival times for each vehicle
+    order_numbers = {v: [] for v in V}
 
     for v in V:
         current_node = 0  # Start at the depot
         route = [current_node]  # Initialize route with the depot
         load = 0  # Initialize vehicle load
         times = [t[current_node, v].X]  # Start with the depot's time (should be 0)
+        order_n = 0 #start routes a depot
+        order = [order_n]
         
         while True:
             # Find the next node connected to the current node for this vehicle
@@ -187,6 +190,7 @@ if m.status == GRB.OPTIMAL:
             for j in N:
                 if current_node != j and b[current_node, j, v].X > 0.5:  # Decision variable > 0.5 indicates selection
                     next_node = j
+                    order.append(u[j].x)
                     break
             
             if next_node is None or next_node == 0:  # Return to depot or no more nodes to visit
@@ -203,12 +207,14 @@ if m.status == GRB.OPTIMAL:
         routes[v] = route  # Save the route for this vehicle
         vehicle_loads[v] = load  # Save the load for this vehicle
         vehicle_times[v] = times  # Save the arrival times for this vehicle
+        order_numbers[v] = order
 
     # Print routes, loads, and arrival times
     for v, route in routes.items():
         print(f"Vehicle {v}: {' -> '.join(map(str, route))}")
         print(f"Vehicle {v} carries a total load of: {vehicle_loads[v]}")
         print(f"Vehicle {v} arrival times: {', '.join(f'{time:.2f}' for time in vehicle_times[v])}")
+        print(f"Vehicle {v} drive order: {', '.join(f'{order:.0f}' for order in order_numbers[v])}")
 
 else:
     print("No optimal solution found.")
