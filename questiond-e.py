@@ -49,16 +49,14 @@ ST = VRP[:,4] #Service time
 
 W = VRP[:,5] #Number of time windows per stop
 
-
-  
 RT = []
 DT = []
 
-for w, j in enumerate(W):
-    RT.append(VRP[w, 6:6 + 2 * j:2].tolist())
-    DT.append(VRP[w, 7:7 + 2 * j:2].tolist())
-    
+for j, w in enumerate(W):
+    RT.append(VRP[j, 6:6 + 2 * w:2].tolist())
+    DT.append(VRP[j, 7:7 + 2 * w:2].tolist())
 
+    
 
 m = Model('VRPmodel')
 
@@ -91,8 +89,7 @@ for i in N:
 #binary variable, 1 if stop j is visted in time window w, 0 if not
 k = {}
 for j in N:
-    for w in W:
-        print(j, w)
+    for w in range(W[j]):
         k[j, w] = m.addVar(lb=0, vtype=GRB.BINARY)
 
         
@@ -133,11 +130,11 @@ for v in V:
     
 #Constraint 6
 # Add subtour elimination constraints
-for i in N:
-    for j in N:
-        if i != j and j != 0:  # Exclude depot as it does not need ordering
-            for v in V:
-                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
+# for i in N:
+#     for j in N:
+#         if i != j and j != 0:  # Exclude depot as it does not need ordering
+#             for v in V:
+#                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
 #for i in N:    # these seem unnecessary by definition
 #    m.addConstr(u[i] >= 0)
@@ -158,10 +155,10 @@ for v in V:
 
 #Constraint 9
 #Vehicle arrives at stop before due time
-for v in V:
-    for j in N:
-        for i in N:
-            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j][0] * (1 - b[i,0,v]) + DT[0][0] * b[i,0,v]) # service time does not have to be within time window
+# for v in V:
+#     for j in N:
+#         for i in N:
+#             m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j][0] * (1 - b[i,0,v]) + DT[0][0] * b[i,0,v]) # service time does not have to be within time window
 
 #Constraint 10:
 #Vehicle arrives at stop after ready time
@@ -176,16 +173,28 @@ for v in V:
 #         for w in W:  # Loop over the time windows for stop j
 #             m.addConstr(t[j, v] >= RT[j][w] * k[j, w])
             
+
+#Stop is visited after ready time
 for v in V:
     for j in N:
-        # Loop over the number of time windows for stop j (from W[j])
-        for w in range(W[j]):  # Use the number of time windows for stop j
+        for w in range(W[j]):  
             m.addConstr(t[j, v] >= RT[j][w] * k[j, w])
-        
-# Constraint 11:
-# Stop is only visited within one of the windows
-for w in range(W):
-    m.addConstr(quicksum(k[j, w] for j in N) == 1)
+            
+#Constraint 9
+#Vehicle arrives at stop before due time
+for v in V:
+    for j in N:
+        for w in range(W[j]):
+            if j != 0:
+                m.addConstr(t[j, v] <= DT[j][w] * k[j, w])
+                
+
+
+#Constraint 11:
+#Stop is only visited within one of the windows
+for j in N:
+    if j != 0:
+        m.addConstr(quicksum(k[j, w] for w in range(W[j])) == 1)
         
 
 m.update()

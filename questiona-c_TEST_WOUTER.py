@@ -115,7 +115,7 @@ for v in V:
         if j != 0:
             m.addConstr(quicksum(b[i, j, v] for i in N if i != j) == z[j, v])
     
-#Constraint 6
+# Constraint 6
 # Add subtour elimination constraints
 for i in N:
     for j in N:
@@ -123,9 +123,6 @@ for i in N:
             for v in V:
                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
-#for i in N:    # these seem unnecessary by definition
-#    m.addConstr(u[i] >= 0)
-#    m.addConstr(u[i] <= n)
 
 #Constraint 7
 #Vehicle capacity constraint
