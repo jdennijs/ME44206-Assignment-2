@@ -37,6 +37,7 @@ for i in nodes:
     for j in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
+
 V = range(2) #Number of vehicles
 
 C = 130 #capacity of each vehicle
@@ -67,7 +68,7 @@ for j in N:
     for v in V:
         z[j, v] = m.addVar(vtype=GRB.BINARY, lb=0)
         
-# arrival time of vehicle v at location j
+# arrival time of vehicle v at location i
 t = {}
 for v in V:
     for j in N:
@@ -89,8 +90,8 @@ m.setObjective(obj, GRB.MINIMIZE)
 #Every location visited exactly once  
       
 for j in N:
-#    if j != 0:
-     m.addConstr(quicksum(z[j,v] for v in V) == 1)
+    if j != 0:
+        m.addConstr(quicksum(z[j,v] for v in V) == 1)
     
 #Constraint 2
 #Flow continuity
@@ -98,15 +99,15 @@ for j in N:
     for v in V:
         m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
 
-#Constraint 3 # not necessary as it is already given by 1
+#Constraint 3
 #start at depot
 for v in V:
     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
     
-#Constraint  4 # not necessary as it is already given by 1
+#Constraint  4
 #end at depot
-#for v in V:
-#    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
+for v in V:
+    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
 #Constraint 5
 for v in V:
@@ -138,13 +139,12 @@ for v in V:
         for j in N:
             if i != j and j != 0:  # Ensure it's not the depot
                 m.addConstr(t[j, v] >= t[i, v] + s[i, j] + ST[i] - M * (1 - b[i, j, v]))
-
 #Constraint 9
 #Vehicle arrives at stop before due time
 for v in V:
     for j in N:
-        for i in N:
-            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v]) # service time does not have to be within time window
+        if j != 0:
+            m.addConstr(t[j, v] <= DT[j])
 
 # #Constraint 10:
 # #Vehicle arrives at stop after ready time
@@ -159,12 +159,6 @@ m.optimize()
 
 
 if m.status == GRB.OPTIMAL:
-#    print(t[1, 0].X)
-#    for v in V:
-#        for i in N:
-#            for t in round(t[i].X,0):
-#                print(f'Vehicle {v} is at location {i} at {t[i]}.')
-    
     print(f"Optimal objective value (total distance): {m.objVal:.2f}")
     
     # Extract routes, loads, and arrival times for each vehicle
@@ -235,7 +229,7 @@ for v in V:
                 plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
 
 plt.legend()
-plt.savefig('Figs/questiona-c.png')
+plt.savefig('Figs/questiona-c_TEST.png')
 plt.show()
 
 
