@@ -92,8 +92,8 @@ m.setObjective(obj, GRB.MINIMIZE)
 #Every location visited exactly once  
       
 for j in N:
-    if j != 0:
-        m.addConstr(quicksum(z[j,v] for v in V) == 1)
+#    if j != 0:
+     m.addConstr(quicksum(z[j,v] for v in V) == 1)
     
 #Constraint 2
 #Flow continuity
@@ -101,15 +101,15 @@ for j in N:
     for v in V:
         m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
 
-#Constraint 3
+#Constraint 3 # not necessary as it is already given by 1
 #start at depot
 for v in V:
     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
     
-#Constraint  4
+#Constraint  4 # not necessary as it is already given by 1
 #end at depot
-for v in V:
-    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
+#for v in V:
+#    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
 #Constraint 5
 for v in V:
@@ -174,10 +174,6 @@ if m.status == GRB.OPTIMAL:
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
     vehicle_loads = {v: 0 for v in V}  # Dictionary to store the load for each vehicle
     vehicle_times = {v: [] for v in V}  # Dictionary to store arrival times for each vehicle
-
-    for v in V:
-        for i in N:
-            print(vehicle_times)
 
     for v in V:
         current_node = 0  # Start at the depot
