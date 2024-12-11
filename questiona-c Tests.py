@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Nov 30 17:23:05 2024
+Created on Wed Dec 11 11:59 2024
 
 @author: Ivo Aben, Jelle Derks, Jochem den Nijs and Wouter van der Hoorn
 """
@@ -39,9 +39,9 @@ for i in nodes:
     for j in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
-V = range(2) #Number of vehicles
+V = range(3) #Number of vehicles
 
-C = 130 #capacity of each vehicle
+C = 100 #capacity of each vehicle
 
 d = VRP[:,3] #Demand at a stop
 
@@ -88,33 +88,34 @@ m.setObjective(obj, GRB.MINIMIZE)
 ##Constraints
 
 #Constraint 1
-#Every location visited exactly once  
+# Every location is visited precisely once.
+    # excluding j = 0 not necessary as they have to return to j
       
 for j in N:
 #    if j != 0:
      m.addConstr(quicksum(z[j,v] for v in V) == 1)
     
 #Constraint 2
-#Flow continuity
+#Flow continuity per vehicle # aka number of times leaving a node must be the same as entering #this ensures ending at starting location
 for j in N:
     for v in V:
-        m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
+        m.addConstr((quicksum(b[i,j,v] for i in N)) == (quicksum(b[j,i,v] for i in N)))
 
-#Constraint 3 # not necessary as it is already given by 1
+#Constraint 3 # deze kan niet samen met 5?
 #start at depot
-for v in V:
-    m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
+#for v in V:
+#    m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
     
-#Constraint  4 # not necessary as it is already given by 1
+#Constraint  4 # not necessary as it is already given by 3 combined with 2
 #end at depot
 #for v in V:
 #    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
-#Constraint 5
-for v in V:
-    for j in N:
-        if j != 0:
-            m.addConstr(quicksum(b[i, j, v] for i in N if i != j) == z[j, v])
+#Constraint 5 #if a car is at i and it goes to j, the route z[j,v] exists for that vehicle. 
+# If this one is not there, no car drives
+#for v in V: # moved to the sum as it also implies singular location visits
+for j in N:
+    m.addConstr(quicksum(b[i, j, v] for i in N for v in V if i != j) == quicksum(z[j, v] for v in V))
     
 #Constraint 6
 # Add subtour elimination constraints
