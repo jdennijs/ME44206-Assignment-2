@@ -60,7 +60,9 @@ K = []
 
 for j in y:
     K.append(list(range(j)))
-        
+    
+print(K)
+    
 m = Model('VRPmodel')
 
 ## Decision variables
@@ -73,10 +75,16 @@ for i in N:
             b[i, j, v] = m.addVar(vtype=GRB.BINARY, lb = 0)
             
 #binary variable, 1 if vehicle v visits location j, 0 if not
+# z = {}
+# for j in N:
+#     for v in V:
+#         z[j, v] = m.addVar(vtype=GRB.BINARY, lb=0)
+        
 z = {}
 for j in N:
-    for v in V:
-        z[j, v] = m.addVar(vtype=GRB.BINARY, lb=0)
+    for k in K[j]:
+        for v in V:
+            z[j, k, v] = m.addVar(vtype=GRB.BINARY, lb=0)
         
 # arrival time of vehicle v at location i
 t = {}
@@ -107,7 +115,7 @@ m.setObjective(obj, GRB.MINIMIZE)
 #Every location visited exactly once     
 for j in N:
     if j != 0:
-        m.addConstr(quicksum(z[j,v] for v in V) == 1)
+        m.addConstr(quicksum(z[j, k, v] for k in K[j] for v in V) == 1)
     
 #Constraint 2
 #Flow continuity
@@ -126,10 +134,13 @@ for v in V:
     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
 #Constraint 5
+            
 for v in V:
     for j in N:
         if j != 0:
-            m.addConstr(quicksum(b[i, j, v] for i in N if i != j) == z[j, v])
+            m.addConstr(
+                quicksum(b[i, j, v] for i in N if i != j) == quicksum(z[j, k, v] for k in K[j]))
+
     
 # Constraint 6
 # Add subtour elimination constraints
@@ -142,7 +153,9 @@ for i in N:
 #Constraint 7
 #Vehicle capacity constraint
 for v in V:
-    m.addConstr(quicksum(d[j] * z[j, v] for j in N) <= C)
+    m.addConstr(
+        quicksum(d[j] * quicksum(z[j, k, v] for k in K[j]) for j in N) <= C
+    )
     
 #Constraint 8
 M = 1e5 + 1e6
@@ -156,18 +169,20 @@ for v in V:
 for v in V:
     for j in N:
         if j != 0:
-            m.addConstr(t[j, v] <= DT[j])
+            for k in K[j]:
+                m.addConstr(t[j, v] <= DT[j][k] + M * (1 - z[j, k, v]))
 
 # #Constraint 10:
 # #Vehicle arrives at stop after ready time
 for v in V:
     for j in N:
-        m.addConstr(t[j, v] >= RT[j])
+        for k in K[j]:    
+            m.addConstr(t[j, v] >= RT[j][k] - M * (1 - z[j, k, v]))
         
 # Constraint 11:
 # Every stop is visited in one time window
-for j in N:
-    m.addConstr(quicksum(w[j, k] for k in K[j]))
+# for j in N:
+#     m.addConstr(quicksum(w[j, k] for k in K[j]))
         
 
 m.update()
@@ -175,22 +190,70 @@ m.update()
 m.optimize()
 
 
+# if m.status == GRB.OPTIMAL:
+#     print(f"Optimal objective value (total distance): {m.objVal:.2f}")
+    
+    
+    
+#     # Extract routes, loads, and arrival times for each vehicle
+#     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
+#     vehicle_loads = {v: 0 for v in V}  # Dictionary to store the load for each vehicle
+#     vehicle_times = {v: [] for v in V}  # Dictionary to store arrival times for each vehicle
+
+#     for v in V:
+#         current_node = 0  # Start at the depot
+#         route = [current_node]  # Initialize route with the depot
+#         load = 0  # Initialize vehicle load
+#         times = [t[current_node, v].X]  # Start with the depot's time (should be 0)
+        
+#         while True:
+#             # Find the next node connected to the current node for this vehicle
+#             next_node = None
+#             for j in N:
+#                 if current_node != j and b[current_node, j, v].X > 0.5:  # Decision variable > 0.5 indicates selection
+#                     next_node = j
+#                     break
+            
+#             if next_node is None or next_node == 0:  # Return to depot or no more nodes to visit
+#                 last_node = route[-1]
+#                 route.append(0)  # Append depot at the end
+#                 times.append(t[last_node, v].X + s[last_node,0] + ST[last_node])  # Append depot's return time
+#                 break
+            
+#             route.append(next_node)
+#             times.append(t[next_node, v].X)  # Record the arrival time at the next node
+#             load += d[next_node]  # Add the demand of the visited node to the load
+#             current_node = next_node
+        
+#         routes[v] = route  # Save the route for this vehicle
+#         vehicle_loads[v] = load  # Save the load for this vehicle
+#         vehicle_times[v] = times  # Save the arrival times for this vehicle
+
+#     # Print routes, loads, and arrival times
+#     for v, route in routes.items():
+#         print(f"Vehicle {v}: {' -> '.join(map(str, route))}")
+#         print(f"Vehicle {v} carries a total load of: {vehicle_loads[v]}")
+#         print(f"Vehicle {v} arrival times: {', '.join(f'{time:.2f}' for time in vehicle_times[v])}")
+
+# else:
+#     print("No optimal solution found.")
+
 if m.status == GRB.OPTIMAL:
     print(f"Optimal objective value (total distance): {m.objVal:.2f}")
-    
-    
     
     # Extract routes, loads, and arrival times for each vehicle
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
     vehicle_loads = {v: 0 for v in V}  # Dictionary to store the load for each vehicle
     vehicle_times = {v: [] for v in V}  # Dictionary to store arrival times for each vehicle
+    vehicle_time_slots = {v: [] for v in V}  # Dictionary to store time slots for each vehicle
 
     for v in V:
         current_node = 0  # Start at the depot
         route = [current_node]  # Initialize route with the depot
         load = 0  # Initialize vehicle load
         times = [t[current_node, v].X]  # Start with the depot's time (should be 0)
-        
+        time_slots = [None]  # Depot has no time window
+
         while True:
             # Find the next node connected to the current node for this vehicle
             next_node = None
@@ -202,26 +265,39 @@ if m.status == GRB.OPTIMAL:
             if next_node is None or next_node == 0:  # Return to depot or no more nodes to visit
                 last_node = route[-1]
                 route.append(0)  # Append depot at the end
-                times.append(t[last_node, v].X + s[last_node,0] + ST[last_node])  # Append depot's return time
+                times.append(t[last_node, v].X + s[last_node, 0] + ST[last_node])  # Append depot's return time
+                time_slots.append(None)  # Depot has no time window
                 break
             
             route.append(next_node)
             times.append(t[next_node, v].X)  # Record the arrival time at the next node
             load += d[next_node]  # Add the demand of the visited node to the load
+            
+            # Identify the time slot used at the next node
+            used_slot = None
+            for k in K[next_node]:
+                if z[next_node, k, v].X > 0.5:  # Decision variable > 0.5 indicates selection
+                    used_slot = k
+                    break
+            time_slots.append(used_slot)
+            
             current_node = next_node
         
         routes[v] = route  # Save the route for this vehicle
         vehicle_loads[v] = load  # Save the load for this vehicle
         vehicle_times[v] = times  # Save the arrival times for this vehicle
+        vehicle_time_slots[v] = time_slots  # Save the time slots for this vehicle
 
-    # Print routes, loads, and arrival times
+    # Print routes, loads, arrival times, and time slots
     for v, route in routes.items():
         print(f"Vehicle {v}: {' -> '.join(map(str, route))}")
         print(f"Vehicle {v} carries a total load of: {vehicle_loads[v]}")
         print(f"Vehicle {v} arrival times: {', '.join(f'{time:.2f}' for time in vehicle_times[v])}")
+        print(f"Vehicle {v} time slots: {', '.join(str(slot) if slot is not None else 'Depot' for slot in vehicle_time_slots[v])}")
 
 else:
     print("No optimal solution found.")
+
     
 
     
