@@ -46,18 +46,18 @@ d = VRP[:,3] #Demand at a stop
 
 ST = VRP[:,4] #Service time 
 
-y = VRP[:,5] #Number of time windows per stop
+w = VRP[:,5] #Number of time windows per stop
 
 RT = []
 DT = []
 
-for j, k in enumerate(y):
+for j, k in enumerate(w):
     RT.append(VRP[j, 6:6 + 2 * k:2].tolist())
     DT.append(VRP[j, 7:7 + 2 * k:2].tolist())
 
 K = []
 
-for j in y:
+for j in w:
     K.append(list(range(j)))
     
     
@@ -89,12 +89,6 @@ for v in V:
 u = {}
 for i in N:
     u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
-    
-#binary variable, 1 if stop j is visted in time window w, 0 if not
-w = {}
-for j in N:
-    for k in K[j]:
-        w[j, k] = m.addVar(lb=0, vtype=GRB.BINARY)
 
         
 ##Objective
@@ -233,8 +227,6 @@ if m.status == GRB.OPTIMAL:
 
 else:
     print("No optimal solution found.")
-
-    
 
     
 arc_solution = m.getAttr('x', b)
