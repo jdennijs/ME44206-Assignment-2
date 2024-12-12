@@ -38,9 +38,9 @@ for i in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
 
-V = range(2) #Number of vehicles
+V = range(3) #Number of vehicles
 
-C = 130 #capacity of each vehicle
+C = 65 #capacity of each vehicle
 
 d = VRP[:,3] #Demand at a stop
 
@@ -115,13 +115,13 @@ for j in N:
 
 #Constraint 3
 #start at depot
-for v in V:
-    m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
+# for v in V:
+#     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
     
-#Constraint  4
-#end at depot
-for v in V:
-    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
+# #Constraint  4
+# #end at depot
+# for v in V:
+#     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
 #Constraint 5
 #Link travel route to time window            
@@ -133,11 +133,11 @@ for v in V:
 
 # Constraint 6
 # Add subtour elimination constraints
-for i in N:
-    for j in N:
-        if i != j and j != 0:  # Exclude depot as it does not need ordering
-            for v in V:
-                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
+# for i in N:
+#     for j in N:
+#         if i != j and j != 0:  # Exclude depot as it does not need ordering
+#             for v in V:
+#                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
 #Constraint 7A
 #Vehicle capacity constraint per point
