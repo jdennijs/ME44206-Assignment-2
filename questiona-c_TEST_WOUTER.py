@@ -75,11 +75,10 @@ for v in V:
         t[j, v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)
         
 # Add position variables for subtour elimination
-u = {}
-for i in N:
-    u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
+#u = {}
+#for i in N:
+#    u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
 
-        
 ##Objective
 obj = (quicksum(s[i, j] * b[i,j,v] for i in N for j in N if i != j for v in V))
 m.setObjective(obj, GRB.MINIMIZE)
@@ -117,11 +116,11 @@ for v in V:
     
 # Constraint 6
 # Add subtour elimination constraints
-for i in N:
-    for j in N:
-        if i != j and j != 0:  # Exclude depot as it does not need ordering
-            for v in V:
-                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
+#for i in N:
+#    for j in N:
+#        if i != j and j != 0:  # Exclude depot as it does not need ordering
+#            for v in V:
+#                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
 
 #Constraint 7
@@ -169,8 +168,8 @@ if m.status == GRB.OPTIMAL:
         route = [current_node]  # Initialize route with the depot
         load = 0  # Initialize vehicle load
         times = [t[current_node, v].X]  # Start with the depot's time (should be 0)
-        order_n = 0 #start routes a depot
-        order = [order_n]
+#        order_n = 0 #start routes a depot
+#        order = [order_n]
         
         while True:
             # Find the next node connected to the current node for this vehicle
@@ -178,7 +177,7 @@ if m.status == GRB.OPTIMAL:
             for j in N:
                 if current_node != j and b[current_node, j, v].X > 0.5:  # Decision variable > 0.5 indicates selection
                     next_node = j
-                    order.append(u[j].x)
+#                    order.append(u[j].x)
                     break
             
             if next_node is None or next_node == 0:  # Return to depot or no more nodes to visit
@@ -195,14 +194,14 @@ if m.status == GRB.OPTIMAL:
         routes[v] = route  # Save the route for this vehicle
         vehicle_loads[v] = load  # Save the load for this vehicle
         vehicle_times[v] = times  # Save the arrival times for this vehicle
-        order_numbers[v] = order
+#        order_numbers[v] = order
 
     # Print routes, loads, and arrival times
     for v, route in routes.items():
         print(f"Vehicle {v}: {' -> '.join(map(str, route))}")
         print(f"Vehicle {v} carries a total load of: {vehicle_loads[v]}")
         print(f"Vehicle {v} arrival times: {', '.join(f'{time:.2f}' for time in vehicle_times[v])}")
-        print(f"Vehicle {v} drive order: {', '.join(f'{order:.0f}' for order in order_numbers[v])}")
+#        print(f"Vehicle {v} drive order: {', '.join(f'{order:.0f}' for order in order_numbers[v])}")
 
 else:
     print("No optimal solution found.")
