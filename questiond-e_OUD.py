@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #Read data file
-with open("Data/data_small.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
+with open("Data/data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
     data = f.readlines()                        # Extract instance definitions
 
 VRP = []                                        # Create array for data related to nodes
@@ -24,6 +24,7 @@ for line in data:
     words=[int(i) for i in words]           # Covert data from string to integer
     VRP.append(words)                       # Store node data
 VRP = np.array(VRP)
+
 
 xc = VRP[:,1]                                     # X-position of nodes
 yc = VRP[:,2]                                     # Y-position of nodes
@@ -46,11 +47,20 @@ d = VRP[:,3] #Demand at a stop
 
 ST = VRP[:,4] #Service time 
 
-RT = VRP[:,5] #Ready time
+y = VRP[:,5] #Number of time windows per stop
 
-DT = VRP[:,6] #Due time
+RT = []
+DT = []
 
+for j, k in enumerate(y):
+    RT.append(VRP[j, 6:6 + 2 * k:2].tolist())
+    DT.append(VRP[j, 7:7 + 2 * k:2].tolist())
 
+K = []
+
+for j in y:
+    K.append(list(range(j)))
+        
 m = Model('VRPmodel')
 
 ## Decision variables
@@ -78,6 +88,12 @@ for v in V:
 u = {}
 for i in N:
     u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
+    
+#binary variable, 1 if stop j is visted in time window w, 0 if not
+w = {}
+for j in N:
+    for k in K[j]:
+        w[j, k] = m.addVar(lb=0, vtype=GRB.BINARY)
 
         
 ##Objective
@@ -86,9 +102,9 @@ m.setObjective(obj, GRB.MINIMIZE)
 
 ##Constraints
 
-#Constraint 1
-#Every location visited exactly once  
       
+#Constraint 1
+#Every location visited exactly once     
 for j in N:
     if j != 0:
         m.addConstr(quicksum(z[j,v] for v in V) == 1)
@@ -115,17 +131,13 @@ for v in V:
         if j != 0:
             m.addConstr(quicksum(b[i, j, v] for i in N if i != j) == z[j, v])
     
-#Constraint 6
+# Constraint 6
 # Add subtour elimination constraints
 for i in N:
     for j in N:
         if i != j and j != 0:  # Exclude depot as it does not need ordering
             for v in V:
                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
-
-#for i in N:    # these seem unnecessary by definition
-#    m.addConstr(u[i] >= 0)
-#    m.addConstr(u[i] <= n)
 
 #Constraint 7
 #Vehicle capacity constraint
@@ -139,19 +151,23 @@ for v in V:
         for j in N:
             if i != j and j != 0:  # Ensure it's not the depot
                 m.addConstr(t[j, v] >= t[i, v] + s[i, j] + ST[i] - M * (1 - b[i, j, v]))
-
 #Constraint 9
 #Vehicle arrives at stop before due time
 for v in V:
     for j in N:
-        for i in N:
-            m.addConstr(t[j, v] * (1 - b[i,0,v]) + (t[j,v] + s[i,0] + ST[i]) * b[i,0,v] <= DT[j] * (1 - b[i,0,v]) + DT[0] * b[i,0,v]) # service time does not have to be within time window
+        if j != 0:
+            m.addConstr(t[j, v] <= DT[j])
 
 # #Constraint 10:
 # #Vehicle arrives at stop after ready time
 for v in V:
     for j in N:
         m.addConstr(t[j, v] >= RT[j])
+        
+# Constraint 11:
+# Every stop is visited in one time window
+for j in N:
+    m.addConstr(quicksum(w[j, k] for k in K[j]))
         
 
 m.update()
@@ -161,6 +177,8 @@ m.optimize()
 
 if m.status == GRB.OPTIMAL:
     print(f"Optimal objective value (total distance): {m.objVal:.2f}")
+    
+    
     
     # Extract routes, loads, and arrival times for each vehicle
     routes = {v: [] for v in V}  # Dictionary to store the route for each vehicle
@@ -204,6 +222,8 @@ if m.status == GRB.OPTIMAL:
 
 else:
     print("No optimal solution found.")
+    
+
     
 arc_solution = m.getAttr('x', b)
 
