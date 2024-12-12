@@ -39,9 +39,9 @@ for i in nodes:
     for j in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
-V = range(3) #Number of vehicles
+V = range(2) #Number of vehicles
 
-C = 100 #capacity of each vehicle
+C = 130 #capacity of each vehicle
 
 d = VRP[:,3] #Demand at a stop
 
@@ -241,7 +241,7 @@ for v in V:
     for i in N:
         for j in N:
             if arc_solution[i, j, v] > 0.99:  # Check if route is selected
-                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
+                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i > j else "")
 
 plt.legend()
 plt.savefig('Figs/questiona-c.png')

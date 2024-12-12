@@ -163,11 +163,15 @@ if m.status == GRB.OPTIMAL:
     vehicle_loads = {v: 0 for v in V}  # Dictionary to store the load for each vehicle
     vehicle_times = {v: [] for v in V}  # Dictionary to store arrival times for each vehicle
     order_numbers = {v: [] for v in V}
+    load_vehicle = {v: [] for v in V}
+    vehicle_loads_sum = {v: [] for v in V}
 
     for v in V:
         current_node = 0  # Start at the depot
         route = [current_node]  # Initialize route with the depot
-        load = 0  # Initialize vehicle load
+        load_start = 0  # Initialize vehicle load
+        load = [load_start]
+        load_sum = 0
         times = [t[current_node, v].X]  # Start with the depot's time (should be 0)
         order_n = 0 #start routes a depot
         order = [order_n]
@@ -189,18 +193,21 @@ if m.status == GRB.OPTIMAL:
             
             route.append(next_node)
             times.append(t[next_node, v].X)  # Record the arrival time at the next node
-            load += d[next_node]  # Add the demand of the visited node to the load
+            load.append(d[next_node])  # Add the demand of the visited node to the load
+            load_sum += d[next_node]  # Add the demand of the visited node to the load
             current_node = next_node
         
         routes[v] = route  # Save the route for this vehicle
-        vehicle_loads[v] = load  # Save the load for this vehicle
+        vehicle_loads_sum[v] = load_sum  # Save the load for this vehicle
         vehicle_times[v] = times  # Save the arrival times for this vehicle
         order_numbers[v] = order
+        load_vehicle[v] = load
 
     # Print routes, loads, and arrival times
     for v, route in routes.items():
         print(f"Vehicle {v}: {' -> '.join(map(str, route))}")
-        print(f"Vehicle {v} carries a total load of: {vehicle_loads[v]}")
+        print(f"Vehicle {v} carries a total load of: {load_sum}")
+        print(f"Vehicle {v} loads: {', '.join(f'{i:.2f}' for i in load_vehicle[v])}")
         print(f"Vehicle {v} arrival times: {', '.join(f'{time:.2f}' for time in vehicle_times[v])}")
         print(f"Vehicle {v} drive order: {', '.join(f'{order:.0f}' for order in order_numbers[v])}")
 
@@ -229,7 +236,7 @@ for v in V:
     for i in N:
         for j in N:
             if arc_solution[i, j, v] > 0.99:  # Check if route is selected
-                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
+                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if v == j else "")
 
 plt.legend()
 plt.savefig('Figs/questiona-c.png')
