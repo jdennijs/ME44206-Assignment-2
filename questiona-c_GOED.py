@@ -101,13 +101,13 @@ for j in N:
 
 #Constraint 3
 #start at depot
-for v in V:
-    m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
+# for v in V:
+#     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
     
-#Constraint  4
-#end at depot # unncessary!
-for v in V:
-    m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
+# #Constraint  4
+# #end at depot # unncessary!
+# for v in V:
+#     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
     
 #Constraint 5
 for v in V:
@@ -117,11 +117,11 @@ for v in V:
     
 # Constraint 6
 # Add subtour elimination constraints
-for i in N:
-    for j in N:
-        if i != j and j != 0:  # Exclude depot as it does not need ordering
-            for v in V:
-                m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
+# for i in N:
+#     for j in N:
+#         if i != j and j != 0:  # Exclude depot as it does not need ordering
+#             for v in V:
+#                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
 
 #Constraint 7
@@ -232,7 +232,7 @@ for v in V:
                 plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
 
 plt.legend()
-plt.savefig('Figs/questiona-c_TEST.png')
+plt.savefig('Figs/questiona-c.png')
 plt.show()
 
 
