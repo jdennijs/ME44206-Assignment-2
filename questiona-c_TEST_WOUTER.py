@@ -36,7 +36,6 @@ s = np.zeros((n,n))                               # Create array for distance be
 for i in nodes:
     for j in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
-        
 
 V = range(2) #Number of vehicles
 
@@ -50,6 +49,10 @@ RT = VRP[:,5] #Ready time
 
 DT = VRP[:,6] #Due time
 
+TT = np.zeros((n,n))
+for i in nodes:
+    for j in nodes:
+        TT[i][j] = s[i][j] + ST[j]
 
 m = Model('VRPmodel')
 
@@ -231,7 +234,7 @@ for v in V:
                 plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
 
 plt.legend()
-plt.savefig('Figs/questiona-c_TEST.png')
+plt.savefig('Figs/questiona-c_TEST_WOUTER.png')
 plt.show()
 
 
