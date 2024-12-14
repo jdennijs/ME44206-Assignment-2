@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #Read data file
-with open("Data/data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
+with open("data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
     data = f.readlines()                        # Extract instance definitions
 
 VRP = []                                        # Create array for data related to nodes
@@ -85,10 +85,6 @@ for v in V:
     for j in N:
         t[j, v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)
         
-# Add position variables for subtour elimination
-u = {}
-for i in N:
-    u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
 
 # Add picked up demand per vehicle
 p = {}

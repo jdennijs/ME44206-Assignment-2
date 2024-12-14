@@ -13,8 +13,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #Read data file
-with open("Data/data_small.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
-    data = f.readlines()                        # Extract instance definitions
+with open("data_small.txt", "r") as f:          
+    data = f.readlines()                        
 
 VRP = []                                        # Create array for data related to nodes
 i = 0                                             # Varible to keep track of lines in data file
@@ -25,14 +25,14 @@ for line in data:
     VRP.append(words)                       # Store node data
 VRP = np.array(VRP)
 
-xc = VRP[:,1]                                     # X-position of nodes
-yc = VRP[:,2]                                     # Y-position of nodes
+xc = VRP[:,1]                          # X-position of nodes
+yc = VRP[:,2]                          # Y-position of nodes
 
 nodes = VRP[:, 0]
 N = VRP[:, 0]
-n = len(nodes)
+n = len(nodes)              #Number of nodes
 
-s = np.zeros((n,n))                               # Create array for distance between nodes
+s = np.zeros((n,n))         # Create array for distance between nodes
 for i in nodes:
     for j in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
@@ -73,11 +73,6 @@ t = {}
 for v in V:
     for j in N:
         t[j, v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)
-        
-# Add position variables for subtour elimination
-u = {}
-for i in N:
-    u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
 
         
 ##Objective
@@ -88,7 +83,6 @@ m.setObjective(obj, GRB.MINIMIZE)
 
 #Constraint 1
 #Every location visited exactly once  
-      
 for j in N:
     if j != 0:
         m.addConstr(quicksum(z[j,v] for v in V) == 1)
@@ -100,50 +94,31 @@ for j in N:
         m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
 
 #Constraint 3
-#start at depot
-# for v in V:
-#     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
-    
-# #Constraint  4
-# #end at depot # unncessary!
-# for v in V:
-#     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
-    
-#Constraint 5
 for v in V:
     for j in N:
         if j != 0:
             m.addConstr(quicksum(b[i, j, v] for i in N if i != j) == z[j, v])
-    
-# Constraint 6
-# Add subtour elimination constraints
-# for i in N:
-#     for j in N:
-#         if i != j and j != 0:  # Exclude depot as it does not need ordering
-#             for v in V:
-#                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
-
-#Constraint 7
+#Constraint 4
 #Vehicle capacity constraint
 for v in V:
     m.addConstr(quicksum(d[j] * z[j, v] for j in N) <= C)
     
-#Constraint 8
+#Constraint 5
 M = 1e5 + 1e6
 for v in V:
     for i in N:
         for j in N:
             if i != j and j != 0:  # Ensure it's not the depot
                 m.addConstr(t[j, v] >= t[i, v] + s[i, j] + ST[i] - M * (1 - b[i, j, v]))
-#Constraint 9
+#Constraint 6
 #Vehicle arrives at stop before due time
 for v in V:
     for j in N:
         if j != 0:
             m.addConstr(t[j, v] <= DT[j])
 
-# #Constraint 10:
+# #Constraint 7:
 # #Vehicle arrives at stop after ready time
 for v in V:
     for j in N:
@@ -182,7 +157,7 @@ if m.status == GRB.OPTIMAL:
             for j in N:
                 if current_node != j and b[current_node, j, v].X > 0.5:  # Decision variable > 0.5 indicates selection
                     next_node = j
-                    order.append(u[j].x)
+                    #order.append(u[j].x)
                     break
             
             if next_node is None or next_node == 0:  # Return to depot or no more nodes to visit
@@ -209,7 +184,6 @@ if m.status == GRB.OPTIMAL:
         print(f"Vehicle {v} carries a total load of: {load_sum}")
         print(f"Vehicle {v} loads: {', '.join(f'{i:.2f}' for i in load_vehicle[v])}")
         print(f"Vehicle {v} arrival times: {', '.join(f'{time:.2f}' for time in vehicle_times[v])}")
-        print(f"Vehicle {v} drive order: {', '.join(f'{order:.0f}' for order in order_numbers[v])}")
 
 else:
     print("No optimal solution found.")

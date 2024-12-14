@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #Read data file
-with open("Data/data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
+with open("data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
     data = f.readlines()                        # Extract instance definitions
 
 VRP = []                                        # Create array for data related to nodes
@@ -84,11 +84,7 @@ t = {}
 for v in V:
     for j in N:
         t[j, v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)
-        
-# Add position variables for subtour elimination
-u = {}
-for i in N:
-    u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
+    
 
         
 ##Objective
@@ -107,18 +103,8 @@ for j in N:
 for j in N:
     for v in V:
         m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
-
+    
 #Constraint 3
-#start at depot
-# for v in V:
-#     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
-    
-# #Constraint  4
-# #end at depot
-# for v in V:
-#     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
-    
-#Constraint 5
 #Link travel route to time window            
 for v in V:
     for j in N:
@@ -126,29 +112,21 @@ for v in V:
             m.addConstr(
                 quicksum(b[i, j, v] for i in N if i != j) == quicksum(z[j, k, v] for k in K[j]))
 
-    
-# Constraint 6
-# Add subtour elimination constraints
-# for i in N:
-#     for j in N:
-#         if i != j and j != 0:  # Exclude depot as it does not need ordering
-#             for v in V:
-#                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
-#Constraint 7
+#Constraint 4
 #Vehicle capacity constraint
 for v in V:
     m.addConstr(
         quicksum(d[j] * quicksum(z[j, k, v] for k in K[j]) for j in N) <= C)
     
-#Constraint 8
+#Constraint 5
 M = 1e5 + 1e6
 for v in V:
     for i in N:
         for j in N:
             if i != j and j != 0:  # Ensure it's not the depot
                 m.addConstr(t[j, v] >= t[i, v] + s[i, j] + ST[i] - M * (1 - b[i, j, v]))
-#Constraint 9
+#Constraint 6
 #Vehicle arrives at stop before due time
 for v in V:
     for j in N:
@@ -156,7 +134,7 @@ for v in V:
             for k in K[j]:
                 m.addConstr(t[j, v] <= DT[j][k] + M * (1 - z[j, k, v]))
 
-# #Constraint 10:
+# #Constraint 7:
 # #Vehicle arrives at stop after ready time
 for v in V:
     for j in N:
