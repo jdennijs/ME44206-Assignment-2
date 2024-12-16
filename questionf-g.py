@@ -13,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #Read data file
-with open("Data/data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
+with open("data_small_multiTW.txt", "r") as f:          # Open Li & Lim PDPTW instance definitions
     data = f.readlines()                        # Extract instance definitions
 
 VRP = []                                        # Create array for data related to nodes
@@ -85,10 +85,6 @@ for v in V:
     for j in N:
         t[j, v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)
         
-# Add position variables for subtour elimination
-u = {}
-for i in N:
-    u[i] = m.addVar(lb=0, ub=n, vtype=GRB.CONTINUOUS)  # Position of node i in the route
 
 # Add picked up demand per vehicle
 p = {}
@@ -270,10 +266,16 @@ plt.scatter(xc[0], yc[0], c='green', marker='s', s=100, label='Depot')
 # Plot the routes for each vehicle
 colors = ['red', 'orange', 'purple', 'brown', 'cyan']  # Use distinct colors for vehicles
 for v in V:
+    first_route_plotted = False  # To track if the label has been added for this vehicle
     for i in N:
         for j in N:
             if arc_solution[i, j, v] > 0.99:  # Check if route is selected
-                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if i == j else "")
+                # Add label only for the first route of the vehicle
+                if not first_route_plotted:
+                    plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}')
+                    first_route_plotted = True
+                else:
+                    plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)])
 
 plt.legend()
 plt.savefig('Figs/questiond-fg.png')
