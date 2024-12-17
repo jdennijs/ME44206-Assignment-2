@@ -210,7 +210,7 @@ else:
 arc_solution = m.getAttr('x', b)
 
 # Plot the routes
-fig = plt.figure(dpi= 120, figsize=(10, 10))
+fig = plt.figure(dpi= 120, figsize=(7, 7))
 plt.xlabel('x-coordinate')
 plt.ylabel('y-coordinate')
 plt.title('Vehicle Routing Problem Solution')
@@ -226,10 +226,16 @@ plt.scatter(xc[0], yc[0], c='green', marker='s', s=100, label='Depot')
 # Plot the routes for each vehicle
 colors = ['red', 'orange', 'purple', 'brown', 'cyan']  # Use distinct colors for vehicles
 for v in V:
+    first_route_plotted = False  # To track if the label has been added for this vehicle
     for i in N:
         for j in N:
             if arc_solution[i, j, v] > 0.99:  # Check if route is selected
-                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if v == j else "")
+                # Add label only for the first route of the vehicle
+                if not first_route_plotted:
+                    plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}')
+                    first_route_plotted = True
+                else:
+                    plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)])
 
 plt.legend()
 plt.savefig('Figs/questiond-e.png')

@@ -250,7 +250,7 @@ else:
 arc_solution = m.getAttr('x', b)
 
 # Plot the routes
-fig = plt.figure(dpi= 120, figsize=(10, 10))
+fig = plt.figure(dpi= 120, figsize=(7, 7))
 plt.xlabel('x-coordinate')
 plt.ylabel('y-coordinate')
 plt.title('Vehicle Routing Problem Solution')
