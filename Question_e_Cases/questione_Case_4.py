@@ -38,9 +38,9 @@ for i in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
 
-V = range(2) #Number of vehicles
+V = range(3) #Number of vehicles
 
-C = 130 #capacity of each vehicle
+C = 70 #capacity of each vehicle
 
 d = VRP[:,3] #Demand at a stop
 
@@ -191,10 +191,10 @@ else:
 arc_solution = m.getAttr('x', b)
 
 # Plot the routes
-fig = plt.figure(dpi= 120, figsize=(10, 10))
+fig = plt.figure(dpi= 120, figsize=(7, 7))
 plt.xlabel('x-coordinate')
 plt.ylabel('y-coordinate')
-plt.title('Vehicle Routing Problem Solution')
+plt.title('Vehicle Routing Problem Solution Case 4')
 
 # Plot all nodes
 plt.scatter(xc, yc, c='blue', label='Nodes')
@@ -204,16 +204,24 @@ for i in range(n):
 # Mark the depot
 plt.scatter(xc[0], yc[0], c='green', marker='s', s=100, label='Depot')
 
+
 # Plot the routes for each vehicle
 colors = ['red', 'orange', 'purple', 'brown', 'cyan']  # Use distinct colors for vehicles
 for v in V:
+    first_route_plotted = False  # To track if the label has been added for this vehicle
     for i in N:
         for j in N:
             if arc_solution[i, j, v] > 0.99:  # Check if route is selected
-                plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if v == j else "")
+                # Add label only for the first route of the vehicle
+                if not first_route_plotted:
+                    plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}')
+                    first_route_plotted = True
+                else:
+                    plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)])
+
 
 plt.legend()
-plt.savefig('Figs/questiona-c.png')
+plt.savefig('../Figs/question_e_case4.png')
 plt.show()
 
 
