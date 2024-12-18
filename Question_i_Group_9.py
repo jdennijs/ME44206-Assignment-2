@@ -28,7 +28,7 @@ for line in data:
 
 VRP = np.array(VRP)
 
-print(VRP)
+# print(VRP)
 
 valid_nodes = [i for i in range(len(VRP)) if VRP[i, 1] != 0 and VRP[i, 2] != 0]  # Exclude padded rows
 
@@ -190,6 +190,10 @@ for v in V:
         for k in K[j]:    
             m.addConstr(t[j, v] >= RT[j][k] - M * (1 - z[j, k, v]))
 
+# Constraint 11: abundance; have to have been at 0 at some point
+for v in V:
+    m.addConstr(quicksum(z[0, k, v] for k in K[0]) == 1)  
+
 m.update()
 
 m.optimize()
@@ -292,11 +296,3 @@ for v in V:
 plt.legend()
 plt.savefig('Figs/questiond-i.png')
 plt.show()
-
-
-
-
-
-
-
-
