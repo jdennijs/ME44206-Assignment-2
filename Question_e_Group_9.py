@@ -5,6 +5,13 @@ Created on Sat Nov 30 17:23:05 2024
 @author: Ivo Aben, Jelle Derks, Jochem den Nijs and Wouter van der Hoorn
 """
 
+#NOTE
+#This is case 3 as an example for question e
+
+
+
+
+
 from gurobipy import *
 import numpy as np
 import math
