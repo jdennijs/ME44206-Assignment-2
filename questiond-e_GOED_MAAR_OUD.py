@@ -38,9 +38,9 @@ for i in nodes:
         s[i][j] = math.sqrt((xc[j] - xc[i])**2 + (yc[j] - yc[i])**2) # Store distance between nodes
         
 
-V = range(3) #Number of vehicles
+V = range(2) #Number of vehicles
 
-C = 65 #capacity of each vehicle
+C = 130 #capacity of each vehicle
 
 d = VRP[:,3] #Demand at a stop
 
@@ -84,42 +84,27 @@ t = {}
 for v in V:
     for j in N:
         t[j, v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)
-        
+    
 
-# Add picked up demand per vehicle
-p = {}
-for v in V:
-    for j in N:
-        p[j,v] = m.addVar(vtype=GRB.CONTINUOUS, lb=0)  
-      
+        
 ##Objective
 obj = (quicksum(s[i, j] * b[i,j,v] for i in N for j in N if i != j for v in V))
 m.setObjective(obj, GRB.MINIMIZE)
 
 ##Constraints
 #Constraint 1
-#Every location visited once during one time slot
+#Every location visited exactly once during one time slot
 for j in N:
     if j != 0:
-            m.addConstr(quicksum(z[j, k, v] for k in K[j] for v in V) >= 1)
+        m.addConstr(quicksum(z[j, k, v] for k in K[j] for v in V) == 1)
     
 #Constraint 2
 #Flow continuity
 for j in N:
     for v in V:
         m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
-
+    
 #Constraint 3
-#start at depot
-# for v in V:
-#     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
-    
-# #Constraint  4
-# #end at depot
-# for v in V:
-#     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
-    
-#Constraint 5
 #Link travel route to time window            
 for v in V:
     for j in N:
@@ -127,42 +112,21 @@ for v in V:
             m.addConstr(
                 quicksum(b[i, j, v] for i in N if i != j) == quicksum(z[j, k, v] for k in K[j]))
 
-# Constraint 6
-# Add subtour elimination constraints
-# for i in N:
-#     for j in N:
-#         if i != j and j != 0:  # Exclude depot as it does not need ordering
-#             for v in V:
-#                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
-#Constraint 7A
-#Vehicle capacity constraint per point
+#Constraint 4
+#Vehicle capacity constraint
 for v in V:
-    m.addConstr(quicksum(p[j,v] for j in N) <= C)
-
-#Constraint 7B
-#all demand has to be picked up
-for j in N:
-    m.addConstr(quicksum(p[j,v] for v in V) == d[j])
-
-#Constraint 7C
-# wat er is opgepikt moet ook daadwerkelijk bewaard #redundant (7B) but for safety reasons kept
-
-m.addConstr(quicksum(p[j,v] for v in V for j in N) == quicksum(d[j] for j in N))
-
-#Constraint 7D
-for j in N:
-    for v in V:
-        m.addConstr(p[j,v] <= d[j] * quicksum(z[j,k,v] for k in K[j]))
+    m.addConstr(
+        quicksum(d[j] * quicksum(z[j, k, v] for k in K[j]) for j in N) <= C)
     
-#Constraint 8
+#Constraint 5
 M = 1e5 + 1e6
 for v in V:
     for i in N:
         for j in N:
             if i != j and j != 0:  # Ensure it's not the depot
                 m.addConstr(t[j, v] >= t[i, v] + s[i, j] + ST[i] - M * (1 - b[i, j, v]))
-#Constraint 9
+#Constraint 6
 #Vehicle arrives at stop before due time
 for v in V:
     for j in N:
@@ -170,21 +134,17 @@ for v in V:
             for k in K[j]:
                 m.addConstr(t[j, v] <= DT[j][k] + M * (1 - z[j, k, v]))
 
-# #Constraint 10:
+# #Constraint 7:
 # #Vehicle arrives at stop after ready time
 for v in V:
     for j in N:
         for k in K[j]:    
             m.addConstr(t[j, v] >= RT[j][k] - M * (1 - z[j, k, v]))
 
-# Constraint 11: abundance; have to have been at 0 at some point
-for v in V:
-    for j in N:
-        m.addConstr(quicksum(z[0, k, v] for k in K[j]) == 1)  
-
 m.update()
 
 m.optimize()
+
 
 if m.status == GRB.OPTIMAL:
     print(f"Optimal objective value (total distance): {m.objVal:.2f}")
@@ -242,20 +202,15 @@ if m.status == GRB.OPTIMAL:
         print(f"Vehicle {v} carries a total load of: {vehicle_loads[v]}")
         print(f"Vehicle {v} arrival times: {', '.join(f'{time:.2f}' for time in vehicle_times[v])}")
         print(f"Vehicle {v} time slots: {', '.join(str(slot) if slot is not None else 'Depot' for slot in vehicle_time_slots[v])}")
-        print("Demand (p[j, v]) for visited nodes:")
-        sumpj = 0
-        for j in route:
-            sumpj = sumpj + p[j,v].x
-            print(f"Node {j}, Vehicle {v}: picked up = {p[j, v].x}. Running storage: {sumpj}. Needed to pick up: {d[j]}") 
-        print('total opgepikt:', sumpj, "door vehicle", v)
 
 else:
     print("No optimal solution found.")
 
+    
 arc_solution = m.getAttr('x', b)
 
 # Plot the routes
-fig = plt.figure(dpi= 120, figsize=(10, 10))
+fig = plt.figure(dpi= 120, figsize=(7, 7))
 plt.xlabel('x-coordinate')
 plt.ylabel('y-coordinate')
 plt.title('Vehicle Routing Problem Solution')
@@ -283,7 +238,7 @@ for v in V:
                     plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)])
 
 plt.legend()
-plt.savefig('Figs/questiond-fg.png')
+plt.savefig('Figs/questiond-e.png')
 plt.show()
 
 
