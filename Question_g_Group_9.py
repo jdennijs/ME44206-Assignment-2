@@ -109,17 +109,8 @@ for j in N:
     for v in V:
         m.addConstr((quicksum(b[i,j,v] for i in N if i != j)) == (quicksum(b[j,i,v] for i in N if i != j)))
 
+
 #Constraint 3
-#start at depot
-# for v in V:
-#     m.addConstr(quicksum(b[0,j,v] for j in N[1:]) == 1)
-    
-# #Constraint  4
-# #end at depot
-# for v in V:
-#     m.addConstr(quicksum(b[i,0,v] for i in N[1:]) == 1)
-    
-#Constraint 5
 #Link travel route to time window            
 for v in V:
     for j in N:
@@ -127,42 +118,30 @@ for v in V:
             m.addConstr(
                 quicksum(b[i, j, v] for i in N if i != j) == quicksum(z[j, k, v] for k in K[j]))
 
-# Constraint 6
-# Add subtour elimination constraints
-# for i in N:
-#     for j in N:
-#         if i != j and j != 0:  # Exclude depot as it does not need ordering
-#             for v in V:
-#                 m.addConstr(u[i] + 1 - n * (1 - b[i, j, v]) <= u[j])
 
-#Constraint 7A
+#Constraint 4
 #Vehicle capacity constraint per point
 for v in V:
     m.addConstr(quicksum(p[j,v] for j in N) <= C)
 
-#Constraint 7B
+#Constraint 5
 #all demand has to be picked up
 for j in N:
     m.addConstr(quicksum(p[j,v] for v in V) == d[j])
 
-#Constraint 7C
-# wat er is opgepikt moet ook daadwerkelijk bewaard #redundant (7B) but for safety reasons kept
-
-m.addConstr(quicksum(p[j,v] for v in V for j in N) == quicksum(d[j] for j in N))
-
-#Constraint 7D
+#Constraint 6
 for j in N:
     for v in V:
         m.addConstr(p[j,v] <= d[j] * quicksum(z[j,k,v] for k in K[j]))
     
-#Constraint 8
+#Constraint 7
 M = 1e5 + 1e6
 for v in V:
     for i in N:
         for j in N:
             if i != j and j != 0:  # Ensure it's not the depot
                 m.addConstr(t[j, v] >= t[i, v] + s[i, j] + ST[i] - M * (1 - b[i, j, v]))
-#Constraint 9
+#Constraint 8
 #Vehicle arrives at stop before due time
 for v in V:
     for j in N:
@@ -170,14 +149,14 @@ for v in V:
             for k in K[j]:
                 m.addConstr(t[j, v] <= DT[j][k] + M * (1 - z[j, k, v]))
 
-# #Constraint 10:
+# #Constraint 9:
 # #Vehicle arrives at stop after ready time
 for v in V:
     for j in N:
         for k in K[j]:    
             m.addConstr(t[j, v] >= RT[j][k] - M * (1 - z[j, k, v]))
 
-# Constraint 11: abundance; have to have been at 0 at some point
+# Constraint 10: abundance; have to have been at 0 at some point
 for v in V:
     for j in N:
         m.addConstr(quicksum(z[0, k, v] for k in K[j]) == 1)  
@@ -283,7 +262,7 @@ for v in V:
                     plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)])
 
 plt.legend()
-plt.savefig('Figs/questiond-fg.png')
+#plt.savefig('Figs/questiond-fg.png')
 plt.show()
 
 

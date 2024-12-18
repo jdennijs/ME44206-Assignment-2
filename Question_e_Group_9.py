@@ -10,8 +10,6 @@ Created on Sat Nov 30 17:23:05 2024
 
 
 
-
-
 from gurobipy import *
 import numpy as np
 import math
@@ -127,7 +125,7 @@ for v in V:
         quicksum(d[j] * quicksum(z[j, k, v] for k in K[j]) for j in N) <= C)
     
 #Constraint 5
-M = 1e5 + 1e6
+M = 1e5 + 1e6                 #Defining big M
 for v in V:
     for i in N:
         for j in N:
@@ -244,7 +242,7 @@ for v in V:
                 plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if v == j else "")
 
 plt.legend()
-plt.savefig('../Figs/question_e_case3.png')
+#plt.savefig('../Figs/question_e_case3.png')
 plt.show()
 
 

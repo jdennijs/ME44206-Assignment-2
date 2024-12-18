@@ -216,5 +216,5 @@ for v in V:
                 plt.plot([xc[i], xc[j]], [yc[i], yc[j]], linestyle='--', color=colors[v % len(colors)], label=f'Vehicle {v}' if v == j else "")
 
 plt.legend()
-plt.savefig('Figs/questiona-c.png')
+#plt.savefig('Figs/questiona-c.png')
 plt.show()
