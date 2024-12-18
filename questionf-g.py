@@ -177,6 +177,11 @@ for v in V:
         for k in K[j]:    
             m.addConstr(t[j, v] >= RT[j][k] - M * (1 - z[j, k, v]))
 
+# Constraint 11: abundance; have to have been at 0 at some point
+for v in V:
+    for j in N:
+        m.addConstr(quicksum(z[0, k, v] for k in K[j]) == 1)  
+
 m.update()
 
 m.optimize()
