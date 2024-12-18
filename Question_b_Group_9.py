@@ -21,7 +21,7 @@ i = 0                                             # Varible to keep track of lin
 for line in data:
     i = i + 1
     words = line.split()
-    words=[int(i) for i in words]           # Covert data from string to integer
+    words = [int(i) for i in words]           # Covert data from string to integer
     VRP.append(words)                       # Store node data
 VRP = np.array(VRP)
 
@@ -124,6 +124,9 @@ for v in V:
     for j in N:
         m.addConstr(t[j, v] >= RT[j])
         
+# Constraint 8: abundance; have to have been at 0 at some point
+for v in V:
+    m.addConstr(z[0,v] == 1)        
 
 m.update()
 
@@ -215,11 +218,3 @@ for v in V:
 plt.legend()
 plt.savefig('Figs/questiona-c.png')
 plt.show()
-
-
-
-
-
-
-
-
